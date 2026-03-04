@@ -84,7 +84,6 @@ void GameScene::Update(float dt, const Input& input)
 
 	CheckBallVsBlocks_();
 
-	// Day3：暫定クリア
 	if (AliveBlocks_() == 0)
 	{
 		Audio::Instance().PlaySe("decide");
@@ -110,7 +109,7 @@ void GameScene::Draw()
 	const int white = GetColor(240, 240, 240);
 	const int gray = GetColor(180, 180, 180);
 
-	DrawString(40, 40, "GAME (Day3)", white);
+	DrawString(40, 40, "GAME (Day4)", white);
 
 	char buf[128];
 	std::snprintf(buf, sizeof(buf), "LIVES: %d", m_lives);
@@ -118,7 +117,6 @@ void GameScene::Draw()
 	std::snprintf(buf, sizeof(buf), "SCORE: %d", m_score);
 	DrawString(40, 110, buf, white);
 
-	// Blocks
 	for (const auto& b : m_blocks)
 		b.Draw(q, ox, oy);
 
@@ -130,7 +128,6 @@ void GameScene::BuildStage_()
 {
 	m_blocks.clear();
 
-	// 1ステージ固定（Day6でステージ制）
 	const int rows = 5;
 	const int cols = 10;
 
@@ -157,23 +154,18 @@ void GameScene::BuildStage_()
 
 void GameScene::CheckBallVsBlocks_()
 {
-	const Aabb ball = m_ball->GetAabb();
-
 	for (auto& blk : m_blocks)
 	{
 		if (!blk.IsAlive()) continue;
 
 		const Aabb a = blk.GetAabb();
-		if (!IntersectAabb(a, ball)) continue;
+		if (!m_ball->ResolveVsAabb(a))
+			continue;
 
 		blk.Kill();
-		m_score += 100; // Day3は仮
-
+		m_score += 100;
 		Audio::Instance().PlaySe("hit");
-
-		// Day3は暫定：Y反転だけ
-		m_ball->BounceY();
-		break; // 1フレーム1個だけ壊す
+		break; // 1フレーム1個だけ
 	}
 }
 

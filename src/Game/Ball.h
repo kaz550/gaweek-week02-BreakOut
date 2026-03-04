@@ -21,8 +21,9 @@ public:
 	bool IsLaunched() const { return m_launched; }
 	Aabb GetAabb() const;
 
-	// Day3: ブロック衝突の暫定反射
-	void BounceY();
+	// Day4: AABB相手に「面判定＋押し戻し＋反射」する
+	// 戻り値：衝突して解決したら true
+	bool ResolveVsAabb(const Aabb& target);
 
 private:
 	Vec2 m_pos;     // 中心
@@ -39,4 +40,5 @@ private:
 	static float Clamp_(float v, float lo, float hi);
 	static float Length_(const Vec2& v);
 	static Vec2 Normalize_(const Vec2& v);
+	static float Abs_(float v);
 };

@@ -68,13 +68,63 @@ Aabb Ball::GetAabb() const
 	return a;
 }
 
-void Ball::BounceY()
+bool Ball::ResolveVsAabb(const Aabb& target)
 {
-	m_vel.y = -m_vel.y;
-	// 反射後にYが0付近になる事故を避ける（暫定）
-	if (m_vel.y > -0.2f && m_vel.y < 0.2f)
-		m_vel.y = (m_vel.y >= 0.0f) ? 0.2f : -0.2f;
+	const Aabb b = GetAabb();
+	if (!IntersectAabb(target, b))
+		return false;
+
+	// AABB同士の食い込み量を計算
+	// 左から食い込んだ量 / 右から食い込んだ量
+	const float pushL = b.r - target.l;
+	const float pushR = target.r - b.l;
+	// 上から食い込んだ量 / 下から食い込んだ量
+	const float pushT = b.b - target.t;
+	const float pushB = target.b - b.t;
+
+	const float minX = (pushL < pushR) ? pushL : pushR;
+	const float minY = (pushT < pushB) ? pushT : pushB;
+
+	// どちらの軸で解決するか：小さい方＝より浅い方向＝衝突面っぽい
+	if (minX < minY)
+	{
+		// Xで押し戻す
+		if (pushL < pushR)
+		{
+			// 左側へ押す
+			m_pos.x -= minX;
+		}
+		else
+		{
+			// 右側へ押す
+			m_pos.x += minX;
+		}
+
+		m_vel.x = -m_vel.x;
+	}
+	else
+	{
+		// Yで押し戻す
+		if (pushT < pushB)
+		{
+			// 上へ押す
+			m_pos.y -= minY;
+		}
+		else
+		{
+			// 下へ押す
+			m_pos.y += minY;
+		}
+
+		m_vel.y = -m_vel.y;
+	}
+
+	// 速度が極端になって詰まる事故を軽減（最小成分を確保）
+	if (Abs_(m_vel.x) < 0.05f) m_vel.x = (m_vel.x >= 0.0f) ? 0.05f : -0.05f;
+	if (Abs_(m_vel.y) < 0.05f) m_vel.y = (m_vel.y >= 0.0f) ? 0.05f : -0.05f;
+
 	m_vel = Normalize_(m_vel);
+	return true;
 }
 
 void Ball::Launch_()
@@ -150,4 +200,9 @@ Vec2 Ball::Normalize_(const Vec2& v)
 	const float len = Length_(v);
 	if (len <= 1e-6f) return Vec2(0.0f, -1.0f);
 	return Vec2(v.x / len, v.y / len);
+}
+
+float Ball::Abs_(float v)
+{
+	return (v < 0.0f) ? -v : v;
 }
