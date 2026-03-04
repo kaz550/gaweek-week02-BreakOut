@@ -34,7 +34,6 @@ void TitleScene::Update(float dt, const Input& input)
 		else {
 			m_mgr->Context().quality = QualityLevel::High;
 		}
-		
 
 	if (input.Triggered(Action::Decide))
 	{
@@ -54,11 +53,11 @@ void TitleScene::Draw()
 	const int white = GetColor(240, 240, 240);
 	const int gray = GetColor(180, 180, 180);
 
-	DrawString(40, 40, "Game A Week - Week1 (Dodge Drop)", gray);
-	DrawString(40, 100, "DODGE DROP", white);
+	DrawString(40, 40, "Game A Week - Week2 (Breakout)", gray);
+	DrawString(40, 100, "BREAKOUT", white);
 
-	DrawString(40, 170, "Move: Left/Right  Decide: Enter/Space/PadA", gray);
-	DrawString(40, 200, "Back: Esc/PadB (Result)  F1: Toggle FPS  F2: Force LOW", gray);
+	DrawString(40, 170, "Move: Left/Right  Decide: Launch (Day2)", gray);
+	DrawString(40, 200, "Back: Esc/PadB (Debug)  F1: Toggle FPS  F2: Toggle LOW", gray);
 
 	char buf[128];
 	std::snprintf(buf, sizeof(buf), "HI-SCORE: %.2f", m_mgr->Context().hiScore);

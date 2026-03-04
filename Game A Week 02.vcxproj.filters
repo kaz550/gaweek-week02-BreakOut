@@ -84,6 +84,9 @@
     <ClCompile Include="src\Render\RenderUtil.cpp">
       <Filter>ソース ファイル\Render</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Paddle.cpp">
+      <Filter>ソース ファイル\Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Audio\Audio.h">
@@ -157,6 +160,9 @@
     </ClInclude>
     <ClInclude Include="src\Render\RenderUtil.h">
       <Filter>ソース ファイル\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Paddle.h">
+      <Filter>ソース ファイル\Game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

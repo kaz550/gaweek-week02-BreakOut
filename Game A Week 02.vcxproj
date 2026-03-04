@@ -100,7 +100,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions);NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>C:\DxLib_VC\プロジェクトに追加すべきファイル_VC用</AdditionalIncludeDirectories>
@@ -118,7 +118,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions);NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>C:\DxLib_VC\プロジェクトに追加すべきファイル_VC用</AdditionalIncludeDirectories>
@@ -138,6 +138,7 @@
     <ClCompile Include="src\Core\Time.cpp" />
     <ClCompile Include="src\Game\Enemy.cpp" />
     <ClCompile Include="src\Game\EnemySpawner.cpp" />
+    <ClCompile Include="src\Game\Paddle.cpp" />
     <ClCompile Include="src\Game\Player.cpp" />
     <ClCompile Include="src\Game\Score.cpp" />
     <ClCompile Include="src\Input\Input.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="src\Game\Enemy.h" />
     <ClInclude Include="src\Game\EnemySpawner.h" />
     <ClInclude Include="src\Game\Entity.h" />
+    <ClInclude Include="src\Game\Paddle.h" />
     <ClInclude Include="src\Game\Player.h" />
     <ClInclude Include="src\Game\Score.h" />
     <ClInclude Include="src\Game\Vec2.h" />
