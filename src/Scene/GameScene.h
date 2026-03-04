@@ -1,11 +1,13 @@
 #pragma once
 #include "IScene.h"
+#include <vector>
 
 class SceneManager;
 class Camera2D;
 
 class Paddle;
 class Ball;
+class Block;
 
 class GameScene : public IScene
 {
@@ -24,6 +26,13 @@ private:
 	Paddle* m_paddle = nullptr;
 	Ball* m_ball = nullptr;
 
+	std::vector<Block> m_blocks;
+
 	int m_lives = 3;
+	int m_score = 0;
 	float m_time = 0.0f;
+
+	void BuildStage_();
+	void CheckBallVsBlocks_();
+	int AliveBlocks_() const;
 };

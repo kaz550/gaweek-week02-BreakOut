@@ -21,6 +21,9 @@ public:
 	bool IsLaunched() const { return m_launched; }
 	Aabb GetAabb() const;
 
+	// Day3: ブロック衝突の暫定反射
+	void BounceY();
+
 private:
 	Vec2 m_pos;     // 中心
 	Vec2 m_vel;     // 単位方向（正規化済み）
