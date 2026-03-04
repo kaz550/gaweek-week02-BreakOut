@@ -32,7 +32,15 @@ private:
 	int m_score = 0;
 	float m_time = 0.0f;
 
+	// Day5: 演出（Week1思想の流用）
+	float m_hitStopTimer = 0.0f;
+	float m_flashTimer = 0.0f;
+	float m_flashDuration = 0.0f;
+
 	void BuildStage_();
 	void CheckBallVsBlocks_();
 	int AliveBlocks_() const;
+
+	void TriggerBlockHitFx_(bool destroyed);
+	void DrawFlashOverlay_() const;
 };

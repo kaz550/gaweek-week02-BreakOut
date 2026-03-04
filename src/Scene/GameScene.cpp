@@ -1,4 +1,4 @@
-#include "GameScene.h"
+﻿#include "GameScene.h"
 #include "SceneManager.h"
 #include "SceneType.h"
 
@@ -39,11 +39,28 @@ void GameScene::Enter()
 	m_lives = 3;
 	m_score = 0;
 
+	m_hitStopTimer = 0.0f;
+	m_flashTimer = 0.0f;
+	m_flashDuration = 0.0f;
+
 	m_camera->Reset();
 	m_paddle->Reset();
 	m_ball->ResetOnPaddle(*m_paddle);
 
 	BuildStage_();
+}
+
+void GameScene::TriggerBlockHitFx_(bool destroyed)
+{
+	// SEは好みで差し替えOK
+	Audio::Instance().PlaySe("hit");
+
+	// 破壊のほうが強め
+	m_hitStopTimer = destroyed ? 0.06f : 0.02f;
+	m_camera->AddShake(destroyed ? 10.0f : 5.0f, destroyed ? 0.18f : 0.10f);
+
+	m_flashDuration = destroyed ? 0.10f : 0.06f;
+	m_flashTimer = m_flashDuration;
 }
 
 void GameScene::Update(float dt, const Input& input)
@@ -54,6 +71,15 @@ void GameScene::Update(float dt, const Input& input)
 	if (input.Triggered(Action::ForceLow))
 		m_mgr->Context().quality = QualityLevel::Low;
 
+	// Week1と同じ：演出タイマーは常に進める
+	m_camera->Update(dt);
+	if (m_flashTimer > 0.0f)
+	{
+		m_flashTimer -= dt;
+		if (m_flashTimer < 0.0f) m_flashTimer = 0.0f;
+	}
+
+	// デバッグ導線：BackでResult
 	if (input.Triggered(Action::Back))
 	{
 		Audio::Instance().PlaySe("back");
@@ -62,8 +88,15 @@ void GameScene::Update(float dt, const Input& input)
 		return;
 	}
 
+	// HitStop中：ゲーム更新は止める
+	if (m_hitStopTimer > 0.0f)
+	{
+		m_hitStopTimer -= dt;
+		if (m_hitStopTimer < 0.0f) m_hitStopTimer = 0.0f;
+		return;
+	}
+
 	m_time += dt;
-	m_camera->Update(dt);
 	m_paddle->Update(dt, input);
 
 	const bool fell = m_ball->Update(dt, input, *m_paddle);
@@ -84,6 +117,7 @@ void GameScene::Update(float dt, const Input& input)
 
 	CheckBallVsBlocks_();
 
+	// Day5：まだ暫定クリア（Day6で正式化）
 	if (AliveBlocks_() == 0)
 	{
 		Audio::Instance().PlaySe("decide");
@@ -91,6 +125,20 @@ void GameScene::Update(float dt, const Input& input)
 		m_mgr->RequestChange(SceneType::Result);
 		return;
 	}
+}
+
+void GameScene::DrawFlashOverlay_() const
+{
+	if (m_flashTimer <= 0.0f || m_flashDuration <= 0.0f) return;
+
+	float t = m_flashTimer / m_flashDuration; // 1 -> 0
+	int alpha = (int)(180 * t);
+	if (alpha < 0) alpha = 0;
+	if (alpha > 255) alpha = 255;
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+	DrawBox(0, 0, SCREEN_W, SCREEN_H, GetColor(255, 255, 255), TRUE);
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
 void GameScene::Draw()
@@ -107,9 +155,8 @@ void GameScene::Draw()
 		DrawLine(0, y, SCREEN_W, y, GetColor(10, 14, 24));
 
 	const int white = GetColor(240, 240, 240);
-	const int gray = GetColor(180, 180, 180);
 
-	DrawString(40, 40, "GAME (Day4)", white);
+	DrawString(40, 40, "GAME (Day5)", white);
 
 	char buf[128];
 	std::snprintf(buf, sizeof(buf), "LIVES: %d", m_lives);
@@ -122,6 +169,8 @@ void GameScene::Draw()
 
 	m_paddle->Draw(q, ox, oy);
 	m_ball->Draw(q, ox, oy);
+
+	DrawFlashOverlay_();
 }
 
 void GameScene::BuildStage_()
@@ -147,7 +196,13 @@ void GameScene::BuildStage_()
 			const float x1 = x0 + bw;
 			const float y1 = y0 + bh;
 
-			m_blocks.emplace_back(x0, y0, x1, y1);
+			// Day5：HP 1〜3（上段ほど硬い、みたいな簡易ルール）
+			int hp = 1;
+			if (r <= 0) hp = 3;
+			else if (r <= 2) hp = 2;
+			else hp = 1;
+
+			m_blocks.emplace_back(x0, y0, x1, y1, hp);
 		}
 	}
 }
@@ -162,10 +217,13 @@ void GameScene::CheckBallVsBlocks_()
 		if (!m_ball->ResolveVsAabb(a))
 			continue;
 
-		blk.Kill();
-		m_score += 100;
-		Audio::Instance().PlaySe("hit");
-		break; // 1�t���[��1����
+		const bool destroyed = blk.Damage(1);
+		TriggerBlockHitFx_(destroyed);
+
+		if (destroyed)
+			m_score += 100;
+
+		break; // 1フレーム1個だけ
 	}
 }
 
