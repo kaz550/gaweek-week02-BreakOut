@@ -136,6 +136,7 @@
     <ClCompile Include="src\Core\Fps.cpp" />
     <ClCompile Include="src\Core\Quality.cpp" />
     <ClCompile Include="src\Core\Time.cpp" />
+    <ClCompile Include="src\Game\Ball.cpp" />
     <ClCompile Include="src\Game\Enemy.cpp" />
     <ClCompile Include="src\Game\EnemySpawner.cpp" />
     <ClCompile Include="src\Game\Paddle.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\Core\Quality.h" />
     <ClInclude Include="src\Core\Time.h" />
     <ClInclude Include="src\Game\Aabb.h" />
+    <ClInclude Include="src\Game\Ball.h" />
     <ClInclude Include="src\Game\Collision.h" />
     <ClInclude Include="src\Game\Enemy.h" />
     <ClInclude Include="src\Game\EnemySpawner.h" />
