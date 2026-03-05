@@ -11,10 +11,17 @@
 #include "../Game/Ball.h"
 #include "../Game/Block.h"
 
-#include "../Game/Collision.h"
+#include "../Game/Collision.h" // ★ 正しい呼び出し
 
 #include "DxLib.h"
 #include <cstdio>
+
+static int ClampI_(int v, int lo, int hi)
+{
+	if (v < lo) return lo;
+	if (v > hi) return hi;
+	return v;
+}
 
 GameScene::GameScene(SceneManager* mgr)
 	: m_mgr(mgr)
@@ -43,6 +50,11 @@ void GameScene::Enter()
 	m_flashTimer = 0.0f;
 	m_flashDuration = 0.0f;
 
+	// stageIndex の安全化
+	m_mgr->Context().stageCount = 3;
+	m_mgr->Context().stageIndex = ClampI_(m_mgr->Context().stageIndex, 0, m_mgr->Context().stageCount - 1);
+	m_mgr->Context().resultKind = ResultKind::None;
+
 	m_camera->Reset();
 	m_paddle->Reset();
 	m_ball->ResetOnPaddle(*m_paddle);
@@ -50,12 +62,17 @@ void GameScene::Enter()
 	BuildStage_();
 }
 
+void GameScene::GoResult_(ResultKind kind)
+{
+	m_mgr->Context().resultKind = kind;
+	m_mgr->Context().lastScore = (float)m_score;
+	m_mgr->RequestChange(SceneType::Result);
+}
+
 void GameScene::TriggerBlockHitFx_(bool destroyed)
 {
-	// SEは好みで差し替えOK
 	Audio::Instance().PlaySe("hit");
 
-	// 破壊のほうが強め
 	m_hitStopTimer = destroyed ? 0.06f : 0.02f;
 	m_camera->AddShake(destroyed ? 10.0f : 5.0f, destroyed ? 0.18f : 0.10f);
 
@@ -71,7 +88,7 @@ void GameScene::Update(float dt, const Input& input)
 	if (input.Triggered(Action::ForceLow))
 		m_mgr->Context().quality = QualityLevel::Low;
 
-	// Week1と同じ：演出タイマーは常に進める
+	// 演出タイマーは常に進める（Week1思想）
 	m_camera->Update(dt);
 	if (m_flashTimer > 0.0f)
 	{
@@ -79,12 +96,12 @@ void GameScene::Update(float dt, const Input& input)
 		if (m_flashTimer < 0.0f) m_flashTimer = 0.0f;
 	}
 
-	// デバッグ導線：BackでResult
+	// デバッグ導線：BackでResult（GameOver扱いにしておく）
 	if (input.Triggered(Action::Back))
 	{
 		Audio::Instance().PlaySe("back");
-		m_mgr->Context().lastScore = (float)m_score;
-		m_mgr->RequestChange(SceneType::Result);
+		m_mgr->Context().stageIndex = 0;
+		GoResult_(ResultKind::GameOver);
 		return;
 	}
 
@@ -106,8 +123,9 @@ void GameScene::Update(float dt, const Input& input)
 		m_lives--;
 		if (m_lives <= 0)
 		{
-			m_mgr->Context().lastScore = (float)m_score;
-			m_mgr->RequestChange(SceneType::Result);
+			// GameOver：ステージは最初に戻す
+			m_mgr->Context().stageIndex = 0;
+			GoResult_(ResultKind::GameOver);
 			return;
 		}
 
@@ -117,12 +135,24 @@ void GameScene::Update(float dt, const Input& input)
 
 	CheckBallVsBlocks_();
 
-	// Day5：まだ暫定クリア（Day6で正式化）
+	// クリア判定
 	if (AliveBlocks_() == 0)
 	{
 		Audio::Instance().PlaySe("decide");
-		m_mgr->Context().lastScore = (float)m_score;
-		m_mgr->RequestChange(SceneType::Result);
+
+		const int next = m_mgr->Context().stageIndex + 1;
+		if (next >= m_mgr->Context().stageCount)
+		{
+			// ALL CLEAR：次は最初から
+			m_mgr->Context().stageIndex = 0;
+			GoResult_(ResultKind::AllClear);
+		}
+		else
+		{
+			// 次ステージへ
+			m_mgr->Context().stageIndex = next;
+			GoResult_(ResultKind::StageClear);
+		}
 		return;
 	}
 }
@@ -155,14 +185,21 @@ void GameScene::Draw()
 		DrawLine(0, y, SCREEN_W, y, GetColor(10, 14, 24));
 
 	const int white = GetColor(240, 240, 240);
+	const int gray = GetColor(180, 180, 180);
 
-	DrawString(40, 40, "GAME (Day5)", white);
+	DrawString(40, 40, "GAME (Day6)", white);
 
 	char buf[128];
-	std::snprintf(buf, sizeof(buf), "LIVES: %d", m_lives);
+	std::snprintf(buf, sizeof(buf), "STAGE: %d / %d", m_mgr->Context().stageIndex + 1, m_mgr->Context().stageCount);
 	DrawString(40, 80, buf, white);
-	std::snprintf(buf, sizeof(buf), "SCORE: %d", m_score);
+
+	std::snprintf(buf, sizeof(buf), "LIVES: %d", m_lives);
 	DrawString(40, 110, buf, white);
+	std::snprintf(buf, sizeof(buf), "SCORE: %d", m_score);
+	DrawString(40, 140, buf, white);
+
+	DrawString(40, 170, "Decide: Launch", gray);
+	DrawString(40, 200, "Back: Result (Debug)", gray);
 
 	for (const auto& b : m_blocks)
 		b.Draw(q, ox, oy);
@@ -177,32 +214,84 @@ void GameScene::BuildStage_()
 {
 	m_blocks.clear();
 
-	const int rows = 5;
+	// 画面に収まる寸法（800幅想定）
 	const int cols = 10;
+	const float pad = 5.0f;
+	const float bw = 70.0f;
+	const float bh = 26.0f;
 
-	const float pad = 6.0f;
-	const float bw = 100.0f;
-	const float bh = 28.0f;
-
-	const float startX = 80.0f;
+	const float totalW = cols * bw + (cols - 1) * pad;
+	const float startX = ((float)SCREEN_W - totalW) * 0.5f;
 	const float startY = 120.0f;
 
-	for (int r = 0; r < rows; r++)
+	const int stage = m_mgr->Context().stageIndex;
+
+	if (stage == 0)
 	{
-		for (int c = 0; c < cols; c++)
+		// Stage1：基本（上ほど硬い）
+		const int rows = 5;
+		for (int r = 0; r < rows; r++)
 		{
-			const float x0 = startX + c * (bw + pad);
-			const float y0 = startY + r * (bh + pad);
-			const float x1 = x0 + bw;
-			const float y1 = y0 + bh;
+			for (int c = 0; c < cols; c++)
+			{
+				const float x0 = startX + c * (bw + pad);
+				const float y0 = startY + r * (bh + pad);
+				const float x1 = x0 + bw;
+				const float y1 = y0 + bh;
 
-			// Day5：HP 1〜3（上段ほど硬い、みたいな簡易ルール）
-			int hp = 1;
-			if (r <= 0) hp = 3;
-			else if (r <= 2) hp = 2;
-			else hp = 1;
+				int hp = 1;
+				if (r == 0) hp = 3;
+				else if (r <= 2) hp = 2;
+				else hp = 1;
 
-			m_blocks.emplace_back(x0, y0, x1, y1, hp);
+				m_blocks.emplace_back(x0, y0, x1, y1, hp);
+			}
+		}
+	}
+	else if (stage == 1)
+	{
+		// Stage2：隙間あり（チェッカー）
+		const int rows = 6;
+		for (int r = 0; r < rows; r++)
+		{
+			for (int c = 0; c < cols; c++)
+			{
+				if (((r + c) % 2) == 1) continue; // 隙間
+
+				const float x0 = startX + c * (bw + pad);
+				const float y0 = startY + r * (bh + pad);
+				const float x1 = x0 + bw;
+				const float y1 = y0 + bh;
+
+				int hp = (r <= 1) ? 3 : (r <= 3 ? 2 : 1);
+				m_blocks.emplace_back(x0, y0, x1, y1, hp);
+			}
+		}
+	}
+	else
+	{
+		// Stage3：ピラミッド
+		const int rows = 7;
+		for (int r = 0; r < rows; r++)
+		{
+			for (int c = 0; c < cols; c++)
+			{
+				const int left = r;
+				const int right = cols - 1 - r;
+				if (c < left || c > right) continue;
+
+				const float x0 = startX + c * (bw + pad);
+				const float y0 = startY + r * (bh + pad);
+				const float x1 = x0 + bw;
+				const float y1 = y0 + bh;
+
+				int hp = 1;
+				if (r <= 1) hp = 3;
+				else if (r <= 3) hp = 2;
+				else hp = 1;
+
+				m_blocks.emplace_back(x0, y0, x1, y1, hp);
+			}
 		}
 	}
 }
@@ -220,10 +309,9 @@ void GameScene::CheckBallVsBlocks_()
 		const bool destroyed = blk.Damage(1);
 		TriggerBlockHitFx_(destroyed);
 
-		if (destroyed)
-			m_score += 100;
-
-		break; // 1フレーム1個だけ
+		// スコア：ヒットでも少し、破壊なら多め
+		m_score += destroyed ? 100 : 10;
+		break; // 1フレーム1個
 	}
 }
 

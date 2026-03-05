@@ -1,5 +1,6 @@
 #pragma once
 #include "IScene.h"
+#include "SceneContext.h"
 #include <vector>
 
 class SceneManager;
@@ -32,7 +33,7 @@ private:
 	int m_score = 0;
 	float m_time = 0.0f;
 
-	// Day5: 演出（Week1思想の流用）
+	// Day5: 演出
 	float m_hitStopTimer = 0.0f;
 	float m_flashTimer = 0.0f;
 	float m_flashDuration = 0.0f;
@@ -43,4 +44,6 @@ private:
 
 	void TriggerBlockHitFx_(bool destroyed);
 	void DrawFlashOverlay_() const;
+
+	void GoResult_(ResultKind kind);
 };

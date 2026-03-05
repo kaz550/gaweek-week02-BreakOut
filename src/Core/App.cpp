@@ -13,7 +13,7 @@ bool App::InitDxLib_()
 {
 	ChangeWindowMode(TRUE);
 	SetGraphMode(SCREEN_W, SCREEN_H, 32);
-	SetMainWindowText("Game A Week - Week2 (Day5)");
+	SetMainWindowText("Game A Week - Week2 (Day6)");
 
 	if (DxLib_Init() == -1) return false;
 

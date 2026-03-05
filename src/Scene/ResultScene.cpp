@@ -11,6 +11,17 @@
 #include "DxLib.h"
 #include <cstdio>
 
+static const char* ResultTitle_(ResultKind k)
+{
+	switch (k)
+	{
+	case ResultKind::GameOver:   return "GAME OVER";
+	case ResultKind::StageClear: return "STAGE CLEAR";
+	case ResultKind::AllClear:   return "ALL CLEAR";
+	default:                     return "RESULT";
+	}
+}
+
 void ResultScene::Enter()
 {
 	m_isNew = false;
@@ -55,17 +66,21 @@ void ResultScene::Draw()
 	const int gray = GetColor(180, 180, 180);
 	const int gold = GetColor(255, 240, 160);
 
-	DrawString(40, 40, "RESULT", white);
-	DrawString(40, 90, "Decide: Retry (-> Game)", gray);
+	DrawString(40, 40, ResultTitle_(m_mgr->Context().resultKind), white);
+
+	DrawString(40, 90, "Decide: Next (-> Game)", gray);
 	DrawString(40, 120, "Back  : Title (-> Title)", gray);
 
 	char buf[128];
-	std::snprintf(buf, sizeof(buf), "SCORE: %.2f", m_mgr->Context().lastScore);
+	std::snprintf(buf, sizeof(buf), "SCORE: %.0f", m_mgr->Context().lastScore);
 	DrawString(40, 200, buf, white);
 
-	std::snprintf(buf, sizeof(buf), "HI-SCORE: %.2f", m_mgr->Context().hiScore);
+	std::snprintf(buf, sizeof(buf), "HI-SCORE: %.0f", m_mgr->Context().hiScore);
 	DrawString(40, 240, buf, white);
 
+	std::snprintf(buf, sizeof(buf), "NEXT STAGE: %d / %d", m_mgr->Context().stageIndex + 1, m_mgr->Context().stageCount);
+	DrawString(40, 280, buf, gray);
+
 	if (m_isNew)
-		DrawString(40, 280, "NEW RECORD!", gold);
+		DrawString(40, 330, "NEW RECORD!", gold);
 }
