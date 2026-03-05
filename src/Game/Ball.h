@@ -21,7 +21,7 @@ public:
 	bool IsLaunched() const { return m_launched; }
 	Aabb GetAabb() const;
 
-	// Day4: AABB相手に「面判定＋押し戻し＋反射」する
+	// AABB相手に「面判定＋押し戻し＋反射」する
 	// 戻り値：衝突して解決したら true
 	bool ResolveVsAabb(const Aabb& target);
 
@@ -31,6 +31,15 @@ private:
 	float m_speed = 0.0f;
 	float m_radius = 0.0f;
 	bool m_launched = false;
+
+	// Day7：残像（トレイル）
+	static constexpr int TRAIL_MAX = 12;
+	Vec2 m_trail[TRAIL_MAX]{};
+	int  m_trailCount = 0;
+	int  m_trailHead = 0;
+
+	void PushTrail_();
+	void ClearTrail_();
 
 	void Launch_();
 	void FollowPaddle_(const Paddle& paddle);

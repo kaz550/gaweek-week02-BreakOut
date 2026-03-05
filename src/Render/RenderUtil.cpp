@@ -6,15 +6,15 @@ namespace RenderUtil
 {
 	void DrawGlowBox(int x1, int y1, int x2, int y2, int color, QualityLevel q)
 	{
-		int layers = 6;
+		int layers = 4;
 		int maxExpand = 18;
-		int maxAlpha = 90;
+		int maxAlpha = 45;
 
 		if (q == QualityLevel::Low)
 		{
 			layers = 2;
 			maxExpand = 8;
-			maxAlpha = 55;
+			maxAlpha = 45;
 		}
 
 		SetDrawBlendMode(DX_BLENDMODE_ADD, 0);

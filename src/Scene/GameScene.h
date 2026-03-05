@@ -1,6 +1,6 @@
 #pragma once
 #include "IScene.h"
-#include "SceneContext.h"
+#include "SceneContext.h" // š ˆÈŒã‚±‚Ìƒ‹[ƒ‹‚Å“ˆê
 #include <vector>
 
 class SceneManager;
@@ -33,7 +33,6 @@ private:
 	int m_score = 0;
 	float m_time = 0.0f;
 
-	// Day5: ‰‰o
 	float m_hitStopTimer = 0.0f;
 	float m_flashTimer = 0.0f;
 	float m_flashDuration = 0.0f;

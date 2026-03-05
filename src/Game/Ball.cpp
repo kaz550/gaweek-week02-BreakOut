@@ -5,6 +5,8 @@
 #include "../Input/Input.h"
 #include "Paddle.h"
 
+#include "../Render/RenderUtil.h"
+
 #include "DxLib.h"
 #include <cmath>
 
@@ -15,6 +17,25 @@ Ball::Ball()
 	m_vel = Vec2(0.0f, -1.0f);
 	m_launched = false;
 	m_pos = Vec2(SCREEN_W * 0.5f, SCREEN_H * 0.5f);
+
+	ClearTrail_();
+	PushTrail_();
+}
+
+void Ball::ClearTrail_()
+{
+	m_trailCount = 0;
+	m_trailHead = 0;
+	for (int i = 0; i < TRAIL_MAX; i++)
+		m_trail[i] = m_pos;
+}
+
+void Ball::PushTrail_()
+{
+	m_trail[m_trailHead] = m_pos;
+	m_trailHead = (m_trailHead + 1) % TRAIL_MAX;
+	if (m_trailCount < TRAIL_MAX)
+		m_trailCount++;
 }
 
 void Ball::ResetOnPaddle(const Paddle& paddle)
@@ -22,6 +43,9 @@ void Ball::ResetOnPaddle(const Paddle& paddle)
 	m_launched = false;
 	m_vel = Vec2(0.0f, -1.0f);
 	FollowPaddle_(paddle);
+
+	ClearTrail_();
+	PushTrail_();
 }
 
 bool Ball::Update(float dt, const Input& input, const Paddle& paddle)
@@ -29,6 +53,7 @@ bool Ball::Update(float dt, const Input& input, const Paddle& paddle)
 	if (!m_launched)
 	{
 		FollowPaddle_(paddle);
+		PushTrail_();
 
 		if (input.Triggered(Action::Decide))
 			Launch_();
@@ -42,17 +67,44 @@ bool Ball::Update(float dt, const Input& input, const Paddle& paddle)
 	ReflectOnWalls_();
 	ReflectOnPaddle_(paddle);
 
+	PushTrail_();
+
 	if (GetAabb().t >= (float)SCREEN_H)
 		return true;
 
 	return false;
 }
 
-void Ball::Draw(QualityLevel, int ox, int oy) const
+void Ball::Draw(QualityLevel q, int ox, int oy) const
 {
+	// --- 残像（トレイル） ---
+	// 高品質のときだけ少しリッチに（Blendを使うのでLowでは弱め）
+	const int trailN = (q == QualityLevel::High) ? m_trailCount : (m_trailCount / 2);
+	if (trailN > 1)
+	{
+		// 古いものほど薄く
+		for (int i = 0; i < trailN; i++)
+		{
+			const int idx = (m_trailHead - 1 - i + TRAIL_MAX) % TRAIL_MAX;
+			const Vec2 p = m_trail[idx];
+
+			int alpha = 20 + (trailN - 1 - i) * 12; // 末尾ほど濃く
+			if (alpha > 140) alpha = 140;
+
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+			DrawCircle((int)p.x + ox, (int)p.y + oy, (int)m_radius, GetColor(220, 220, 255), TRUE);
+		}
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
+	// --- 本体 ---
 	const int x = (int)m_pos.x + ox;
 	const int y = (int)m_pos.y + oy;
 	const int r = (int)m_radius;
+
+	// 簡易Bloom：AABBにGlow箱を当てる（DxLibプリミティブ縛り）
+	const Aabb a = GetAabb();
+	RenderUtil::DrawGlowBox((int)a.l + ox, (int)a.t + oy, (int)a.r + ox, (int)a.b + oy, GetColor(240, 240, 255), q);
 
 	DrawCircle(x, y, r, GetColor(250, 250, 250), TRUE);
 	DrawCircle(x, y, r, GetColor(40, 40, 40), FALSE);
@@ -74,52 +126,27 @@ bool Ball::ResolveVsAabb(const Aabb& target)
 	if (!IntersectAabb(target, b))
 		return false;
 
-	// AABB同士の食い込み量を計算
-	// 左から食い込んだ量 / 右から食い込んだ量
 	const float pushL = b.r - target.l;
 	const float pushR = target.r - b.l;
-	// 上から食い込んだ量 / 下から食い込んだ量
 	const float pushT = b.b - target.t;
 	const float pushB = target.b - b.t;
 
 	const float minX = (pushL < pushR) ? pushL : pushR;
 	const float minY = (pushT < pushB) ? pushT : pushB;
 
-	// どちらの軸で解決するか：小さい方＝より浅い方向＝衝突面っぽい
 	if (minX < minY)
 	{
-		// Xで押し戻す
-		if (pushL < pushR)
-		{
-			// 左側へ押す
-			m_pos.x -= minX;
-		}
-		else
-		{
-			// 右側へ押す
-			m_pos.x += minX;
-		}
-
+		if (pushL < pushR) m_pos.x -= minX;
+		else m_pos.x += minX;
 		m_vel.x = -m_vel.x;
 	}
 	else
 	{
-		// Yで押し戻す
-		if (pushT < pushB)
-		{
-			// 上へ押す
-			m_pos.y -= minY;
-		}
-		else
-		{
-			// 下へ押す
-			m_pos.y += minY;
-		}
-
+		if (pushT < pushB) m_pos.y -= minY;
+		else m_pos.y += minY;
 		m_vel.y = -m_vel.y;
 	}
 
-	// 速度が極端になって詰まる事故を軽減（最小成分を確保）
 	if (Abs_(m_vel.x) < 0.05f) m_vel.x = (m_vel.x >= 0.0f) ? 0.05f : -0.05f;
 	if (Abs_(m_vel.y) < 0.05f) m_vel.y = (m_vel.y >= 0.0f) ? 0.05f : -0.05f;
 

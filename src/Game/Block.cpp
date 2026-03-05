@@ -1,5 +1,6 @@
 #include "Block.h"
 #include "../Core/Quality.h"
+#include "../Render/RenderUtil.h"
 
 #include "DxLib.h"
 
@@ -46,8 +47,7 @@ void Block::Draw(QualityLevel q, int ox, int oy) const
 	const int y1 = (int)m_aabb.b + oy;
 
 	// HPで色を変える（1=弱い/3=硬い）
-	// DxLibには GetColorR/G/B のような分解関数が無いので、
-	// Quality差分は「別の色を用意する」方式にします。
+	// DxLibには GetColorR/G/B がないので、High/Low用に色を別定義。
 	int fillHigh = 0;
 	int fillLow = 0;
 
@@ -69,6 +69,11 @@ void Block::Draw(QualityLevel q, int ox, int oy) const
 	}
 
 	const int fill = (q == QualityLevel::High) ? fillHigh : fillLow;
+
+	// --- Bloom（Glow） ---
+	// Week1の RenderUtil を流用。
+	// High だけ強め、Low は軽量化で控えめ。
+	RenderUtil::DrawGlowBox(x0, y0, x1, y1, fill, q);
 
 	DrawBox(x0, y0, x1, y1, fill, TRUE);
 	DrawBox(x0, y0, x1, y1, GetColor(20, 20, 30), FALSE);
