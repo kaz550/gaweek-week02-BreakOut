@@ -58,6 +58,7 @@ Week1で構築した基盤をそのまま使用：
 
 ```cpp
 bool Ball::ResolveVsAabb(const Aabb& target)
+```
 
 食い込み量から衝突面を判定
 
@@ -68,7 +69,9 @@ X or Y のみ反転
 👉 「なんとなく反射」から脱却
 
 ② 耐久ブロック（Day5）
+```cpp
 bool Block::Damage(int amount)
+```
 
 HP制（1〜3）
 
@@ -77,21 +80,26 @@ HP制（1〜3）
 破壊時スコア加算
 
 ③ 演出（HitStop / Flash / Shake）
+```cpp
 m_hitStopTimer = 0.06f;
 m_camera->AddShake(10.0f, 0.18f);
+```
 
 👉 触感を作る重要要素
 
 ④ Glow（疑似Bloom）
+```cpp
 RenderUtil::DrawGlowBox(...)
+```
 
 DxLibのみで実装
 
 軽量・品質切替対応
 
 ⑤ ボール残像
+```cpp
 Vec2 m_trail[TRAIL_MAX];
-
+```
 リングバッファ
 
 αブレンド描画
@@ -118,7 +126,7 @@ Visual Studio でプロジェクトを開く
 このプロジェクトは
 Day1〜Day7の開発記録をZennで公開予定です
 
-👉（ここにZennリンク）
+👉（ここにZennリンクをはる予定）
 
 🎯 Game A Week について
 
