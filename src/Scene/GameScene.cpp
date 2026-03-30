@@ -187,7 +187,7 @@ void GameScene::Draw()
 	const int white = GetColor(240, 240, 240);
 	const int gray = GetColor(180, 180, 180);
 
-	DrawString(40, 40, "GAME (Day6)", white);
+	DrawString(40, 40, "GAME (Day7)", white);
 
 	char buf[128];
 	std::snprintf(buf, sizeof(buf), "STAGE: %d / %d", m_mgr->Context().stageIndex + 1, m_mgr->Context().stageCount);
