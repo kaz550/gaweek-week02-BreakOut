@@ -1,5 +1,7 @@
-# Game A Week - Week2 Block Breaker (DxLib C++)
-
+# Game A Week - Week2 
+---
+Block Breaker (DxLib C++)
+---
 C++ × DxLib で制作した  
 
 **Game A Week プロジェクト Week2**「**ブロック崩し**」です。
